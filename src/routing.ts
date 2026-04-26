@@ -2,6 +2,7 @@ const GOOGLE_SEARCH_URL = "https://www.google.com/search";
 const GOOGLE_HOME_URL = "https://www.google.com/";
 
 const LEADING_NAMED_BANG_PATTERN = /^!([a-z0-9-]+)(?:\s+(.*))?$/i;
+const TRAILING_NAMED_BANG_PATTERN = /^(.*\S)\s+!([a-z0-9-]+)$/i;
 const TRAILING_LUCKY_BANG_PATTERN = /^(.*\S)\s+!$/;
 
 export type ParsedQuery =
@@ -14,6 +15,16 @@ export function parseQuery(rawQuery: string): ParsedQuery {
 
   if (query === "!") {
     return { kind: "lucky", terms: "", original: query };
+  }
+
+  const trailingNamedBangMatch = query.match(TRAILING_NAMED_BANG_PATTERN);
+  if (trailingNamedBangMatch) {
+    return {
+      kind: "namedBang",
+      bang: trailingNamedBangMatch[2].toLowerCase(),
+      terms: trailingNamedBangMatch[1].trim(),
+      original: query,
+    };
   }
 
   const trailingLuckyMatch = query.match(TRAILING_LUCKY_BANG_PATTERN);

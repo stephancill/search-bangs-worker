@@ -22,6 +22,15 @@ describe("parseQuery", () => {
     });
   });
 
+  it("parses trailing named bangs", () => {
+    expect(parseQuery("rust lang !you")).toEqual({
+      kind: "namedBang",
+      bang: "you",
+      terms: "rust lang",
+      original: "rust lang !you",
+    });
+  });
+
   it("parses named bangs", () => {
     expect(parseQuery("!w cloudflare")).toEqual({
       kind: "namedBang",

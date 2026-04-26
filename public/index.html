@@ -30,32 +30,37 @@
       >
     </p>
 
-    <h2>Benchmark Snapshot</h2>
-    <p>Lower is faster. These are median times (p50) from 20 requests.</p>
-    <pre>
+    <details>
+      <summary>Benchmark Snapshot</summary>
+      <p>Lower is faster. These are median times (p50) from 20 requests.</p>
+      <pre>
 Response Time (p50)
 
 Worker default      91ms  |##
 Worker bang         96ms  |##
 DDG bang          1079ms  |######################
 DDG default       1424ms  |#############################
-    </pre>
+      </pre>
+    </details>
     <h2>Queries Served</h2>
     <p id="query-count">Loading...</p>
 
-    <h2>Set as Default Search Engine</h2>
-    <p>Use this URL template: <code>https://search.stupidtech.net/?q=%s</code></p>
-    <ul>
-      <li>
-        <strong>Chrome / Brave</strong>: Settings -> Search engine -> Manage search engines and site search
-        -> Add (under Site search), then set it as default.
-      </li>
-      <li>
-        <strong>Firefox</strong>: Settings -> Search -> Search Shortcuts -> Add, then use
-        <code>https://search.stupidtech.net/?q=%s</code> in "URL with %s in place of the search term".
-      </li>
-      <li><strong>Safari</strong>: Use a Safari extension for custom default search engines.</li>
-    </ul>
+    <details>
+      <summary>Set as Default Search Engine</summary>
+      <p>Use this URL template: <code>https://search.stupidtech.net/?q=%s</code></p>
+      <ul>
+        <li>
+          <strong>Chrome / Brave</strong>: Settings -> Search engine -> Manage search engines and site
+          search -> Add (under Site search), then set it as default.
+        </li>
+        <li>
+          <strong>Firefox</strong>: Settings -> Search -> Search Shortcuts -> Add, then use
+          <code>https://search.stupidtech.net/?q=%s</code> in "URL with %s in place of the search
+          term".
+        </li>
+        <li><strong>Safari</strong>: Use a Safari extension for custom default search engines.</li>
+      </ul>
+    </details>
 
     <script>
       fetch("/stats")

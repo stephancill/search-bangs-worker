@@ -1,18 +1,12 @@
 import { getBangTemplateByToken } from "./bangs";
-import { landingPageHtml } from "./html";
 import { applyBangTemplate, googleLuckyUrl, googleSearchUrl, parseQuery } from "./routing";
+
+type Env = {
+  ASSETS: Fetcher;
+};
 
 function redirect(target: string): Response {
   return Response.redirect(target, 302);
-}
-
-function htmlResponse(body: string): Response {
-  return new Response(body, {
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "public, max-age=300",
-    },
-  });
 }
 
 async function routeQuery(rawQuery: string): Promise<Response> {
@@ -35,7 +29,7 @@ async function routeQuery(rawQuery: string): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname !== "/" && url.pathname !== "/search") {
       return new Response("Not found", { status: 404 });
@@ -43,7 +37,8 @@ export default {
 
     const query = url.searchParams.get("q");
     if (!query || query.trim().length === 0) {
-      return htmlResponse(landingPageHtml());
+      const landingRequest = new Request(new URL("/index.html", request.url));
+      return env.ASSETS.fetch(landingRequest);
     }
 
     return routeQuery(query);

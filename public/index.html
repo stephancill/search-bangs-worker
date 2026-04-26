@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>search.stupidtech.net</title>
+  </head>
+  <body>
+    <h1>search.stupidtech.net</h1>
+    <p>A DuckDuckGo bangs-compatible search redirector with Google as the default engine.</p>
+    <ul>
+      <li><code>?q=rust async</code> -> Google search</li>
+      <li><code>?q=!w rust</code> -> Wikipedia bang</li>
+      <li><code>?q=rust !</code> -> Google first result</li>
+      <li><code>?q=! rust</code> -> Google first result</li>
+      <li><code>?q=!notreal rust</code> -> Google search for full query</li>
+    </ul>
+    <p>
+      Example:
+      <a href="https://search.stupidtech.net/?q=!w+Cloudflare+Workers"
+        >https://search.stupidtech.net/?q=!w+Cloudflare+Workers</a
+      >
+    </p>
+
+    <h2>Benchmark Snapshot</h2>
+    <p>Measured on 2026-04-26 from this deployment environment (20 requests per case).</p>
+    <ul>
+      <li><code>worker_default</code> avg 138ms, p50 94ms, p90 261ms</li>
+      <li><code>worker_bang</code> avg 241ms, p50 89ms, p90 176ms</li>
+      <li><code>worker_bang (warm)</code> avg 103ms, p50 88ms, p90 162ms</li>
+      <li><code>ddg_default</code> avg 1493ms, p50 1434ms, p90 1594ms</li>
+      <li><code>ddg_bang</code> avg 1114ms, p50 1089ms, p90 1201ms</li>
+    </ul>
+    <p>
+      Note: first <code>worker_bang</code> requests can be slower due to bang index refresh;
+      subsequent requests use cache.
+    </p>
+  </body>
+</html>

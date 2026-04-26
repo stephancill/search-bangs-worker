@@ -30,44 +30,43 @@
       >
     </p>
 
-    <details>
-      <summary>Benchmark Snapshot</summary>
-      <p>Lower is faster. These are median times (p50) from 20 requests.</p>
-      <pre>
-Response Time (p50)
+    <p id="query-count">Queries served: loading...</p>
 
-Worker default      91ms  |##
-Worker bang         96ms  |##
-DDG bang          1079ms  |######################
-DDG default       1424ms  |#############################
-      </pre>
-    </details>
-    <h2>Queries Served</h2>
-    <p id="query-count">Loading...</p>
+    <h2>Benchmark</h2>
+    <p>Lower is faster. These are average response times from 20 requests each.</p>
+    <pre>
+Response Time (avg)
 
-    <details>
-      <summary>Set as Default Search Engine</summary>
-      <p>Use this URL template: <code>https://search.stupidtech.net/?q=%s</code></p>
-      <p>
-        Support docs:
+stupid search       113ms  |##
+DuckDuckGo         1309ms  |###########################
+    </pre>
+
+    <h2>Set as Default Search Engine</h2>
+    <p>Use this URL template: <code>https://search.stupidtech.net/?q=%s</code></p>
+    <ul>
+      <li>
         <a href="https://support.google.com/chrome/answer/95426?hl=en&co=GENIE.Platform%3DDesktop"
-          >Chrome</a
-        >,
-        <a href="https://support.mozilla.org/en-US/kb/add-custom-search-engine-firefox">Firefox</a>
-      </p>
-      <ul>
-        <li>
-          <strong>Chrome / Brave</strong>: Settings -> Search engine -> Manage search engines and site
-          search -> Add (under Site search), then set it as default.
-        </li>
-        <li>
-          <strong>Firefox</strong>: Settings -> Search -> Search Shortcuts -> Add, then use
-          <code>https://search.stupidtech.net/?q=%s</code> in "URL with %s in place of the search
-          term".
-        </li>
-        <li><strong>Safari</strong>: Use a Safari extension for custom default search engines.</li>
-      </ul>
-    </details>
+          ><strong>Chrome / Brave</strong></a
+        >: Settings -> Search engine -> Manage search engines and site search -> Add (under Site
+        search), then set it as default.
+      </li>
+      <li>
+        <a href="https://support.mozilla.org/en-US/kb/add-custom-search-engine-firefox"
+          ><strong>Firefox</strong></a
+        >: Settings -> Search -> Search Shortcuts -> Add, then use
+        <code>https://search.stupidtech.net/?q=%s</code> in "URL with %s in place of the search
+        term".
+      </li>
+      <li><strong>Safari</strong>: Use a Safari extension for custom default search engines.</li>
+    </ul>
+
+    <p>
+      <a href="https://github.com/stephancill/rpc-racer">github</a>
+      -
+      <a href="https://x.com/stephancill">twitter</a>
+      -
+      <a href="https://stupidtech.net">stupidtech.net</a>
+    </p>
 
     <script>
       fetch("/stats")
@@ -75,11 +74,11 @@ DDG default       1424ms  |#############################
         .then((data) => {
           const count = Number.isFinite(data.count) ? data.count : 0;
           const el = document.getElementById("query-count");
-          if (el) el.textContent = `${count.toLocaleString()} total queries served`;
+          if (el) el.textContent = `Queries served: ${count.toLocaleString()}`;
         })
         .catch(() => {
           const el = document.getElementById("query-count");
-          if (el) el.textContent = "Unavailable";
+          if (el) el.textContent = "Queries served: unavailable";
         });
     </script>
   </body>

@@ -1,3 +1,5 @@
+import { DurableObject } from "cloudflare:workers";
+
 export class QueryCounter extends DurableObject {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);

@@ -1,8 +1,10 @@
 import { getBangTemplateByToken } from "./bangs";
+import { QueryCounter } from "./counter";
 import { applyBangTemplate, googleLuckyUrl, googleSearchUrl, parseQuery } from "./routing";
 
 type Env = {
   ASSETS: Fetcher;
+  QUERY_COUNTER: DurableObjectNamespace;
 };
 
 function redirect(target: string): Response {
@@ -28,9 +30,33 @@ async function routeQuery(rawQuery: string): Promise<Response> {
   return redirect(applyBangTemplate(template, parsed.terms));
 }
 
+function queryCounterStub(env: Env): DurableObjectStub {
+  return env.QUERY_COUNTER.get(env.QUERY_COUNTER.idFromName("global"));
+}
+
+async function incrementQueryCount(env: Env): Promise<void> {
+  await queryCounterStub(env).fetch("https://counter/increment", { method: "POST" });
+}
+
+async function getQueryCount(env: Env): Promise<number> {
+  const response = await queryCounterStub(env).fetch("https://counter/count");
+  if (!response.ok) {
+    return 0;
+  }
+
+  const body = (await response.json()) as { count?: number };
+  return body.count ?? 0;
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/stats") {
+      const count = await getQueryCount(env);
+      return Response.json({ count });
+    }
+
     if (url.pathname !== "/" && url.pathname !== "/search") {
       return env.ASSETS.fetch(request);
     }
@@ -41,6 +67,10 @@ export default {
       return env.ASSETS.fetch(landingRequest);
     }
 
+    ctx.waitUntil(incrementQueryCount(env));
+
     return routeQuery(query);
   },
 };
+
+export { QueryCounter };

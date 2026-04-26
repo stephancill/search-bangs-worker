@@ -40,20 +40,35 @@ Worker bang         96ms  |##
 DDG bang          1079ms  |######################
 DDG default       1424ms  |#############################
     </pre>
-    <p>
-      Note: first <code>worker_bang</code> requests can be slower due to bang index refresh;
-      subsequent requests use cache.
-    </p>
+    <h2>Queries Served</h2>
+    <p id="query-count">Loading...</p>
 
     <h2>Set as Default Search Engine</h2>
     <p>Use this URL template: <code>https://search.stupidtech.net/?q=%s</code></p>
     <ul>
-      <li><strong>Chrome / Brave</strong>: Settings -> Search engine -> Manage search engines -> Add.</li>
       <li>
-        <strong>Firefox</strong>: Add a bookmark keyword using
-        <code>https://search.stupidtech.net/?q=%s</code>, or use an extension that adds custom search engines.
+        <strong>Chrome / Brave</strong>: Settings -> Search engine -> Manage search engines and site search
+        -> Add (under Site search), then set it as default.
+      </li>
+      <li>
+        <strong>Firefox</strong>: Settings -> Search -> Search Shortcuts -> Add, then use
+        <code>https://search.stupidtech.net/?q=%s</code> in "URL with %s in place of the search term".
       </li>
       <li><strong>Safari</strong>: Use a Safari extension for custom default search engines.</li>
     </ul>
+
+    <script>
+      fetch("/stats")
+        .then((response) => response.json())
+        .then((data) => {
+          const count = Number.isFinite(data.count) ? data.count : 0;
+          const el = document.getElementById("query-count");
+          if (el) el.textContent = `${count.toLocaleString()} total queries served`;
+        })
+        .catch(() => {
+          const el = document.getElementById("query-count");
+          if (el) el.textContent = "Unavailable";
+        });
+    </script>
   </body>
 </html>

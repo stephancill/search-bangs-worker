@@ -9,3 +9,11 @@ enabled = true
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
+
+[[durable_objects.bindings]]
+name = "QUERY_COUNTER"
+class_name = "QueryCounter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["QueryCounter"]

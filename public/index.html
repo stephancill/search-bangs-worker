@@ -24,14 +24,16 @@
     </p>
 
     <h2>Benchmark Snapshot</h2>
-    <p>Measured on 2026-04-26 from this deployment environment (20 requests per case).</p>
-    <ul>
-      <li><code>worker_default</code> avg 138ms, p50 94ms, p90 261ms</li>
-      <li><code>worker_bang</code> avg 241ms, p50 89ms, p90 176ms</li>
-      <li><code>worker_bang (warm)</code> avg 103ms, p50 88ms, p90 162ms</li>
-      <li><code>ddg_default</code> avg 1493ms, p50 1434ms, p90 1594ms</li>
-      <li><code>ddg_bang</code> avg 1114ms, p50 1089ms, p90 1201ms</li>
-    </ul>
+    <p>Lower is faster. These are median times (p50) from 20 requests.</p>
+    <pre>
+Response Time (p50)
+
+Worker default      94ms  |##
+Worker bang warm    88ms  |##
+Worker bang cold    89ms  |##
+DDG bang          1089ms  |######################
+DDG default       1434ms  |#############################
+    </pre>
     <p>
       Note: first <code>worker_bang</code> requests can be slower due to bang index refresh;
       subsequent requests use cache.

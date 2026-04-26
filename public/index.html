@@ -30,7 +30,7 @@
       >
     </p>
 
-    <p id="query-count">Queries served: loading...</p>
+    <p id="query-count"><strong>Queries served:</strong> loading...</p>
 
     <h2>Benchmark</h2>
     <p>Lower is faster. These are average response times from 20 requests each.</p>
@@ -74,11 +74,11 @@ DuckDuckGo         1309ms  |###########################
         .then((data) => {
           const count = Number.isFinite(data.count) ? data.count : 0;
           const el = document.getElementById("query-count");
-          if (el) el.textContent = `Queries served: ${count.toLocaleString()}`;
+          if (el) el.innerHTML = `<strong>Queries served:</strong> ${count.toLocaleString()}`;
         })
         .catch(() => {
           const el = document.getElementById("query-count");
-          if (el) el.textContent = "Queries served: unavailable";
+          if (el) el.innerHTML = "<strong>Queries served:</strong> unavailable";
         });
     </script>
   </body>

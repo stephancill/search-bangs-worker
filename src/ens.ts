@@ -76,10 +76,10 @@ export function contenthashToGatewayUrl(hash: Hex): string | null {
   const value = CID.decode(bytes.slice(bytesRead)).toString();
 
   if (namespace === IPFS_NAMESPACE) {
-    return `https://ipfs.stupidtech.net/ipfs/${value}`;
+    return `https://ipfs.stupidtech.net/ipfs/${value}/`;
   }
 
-  return `https://ipfs.stupidtech.net/ipns/${value}`;
+  return `https://ipfs.stupidtech.net/ipns/${value}/`;
 }
 
 function readVarint(bytes: Uint8Array, offset: number): { value: number; bytesRead: number } {

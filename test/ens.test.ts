@@ -3,7 +3,6 @@ import {
   contenthashToGatewayUrl,
   fetchFirstValidGatewayResponse,
   gatewayUrls,
-  injectBaseHref,
   normalizeEnsQuery,
 } from "../src/ens";
 
@@ -58,7 +57,7 @@ describe("fetchFirstValidGatewayResponse", () => {
       }
 
       return new Response("ok", {
-        headers: { "Content-Type": "text/plain" },
+        headers: { "Content-Type": "text/html" },
         status: 200,
       });
     }) as typeof fetch);
@@ -72,23 +71,6 @@ describe("fetchFirstValidGatewayResponse", () => {
     expect(await response?.text()).toBe("ok");
   });
 
-  it("injects a base href into html responses", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        '<!doctype html><html><head><link href="./style.css"></head><body></body></html>',
-        {
-          headers: { "Content-Type": "text/html", "Content-Length": "76" },
-          status: 200,
-        },
-      ),
-    );
-
-    const response = await fetchFirstValidGatewayResponse(["https://gateway.example/ipfs/cid"]);
-
-    expect(response?.headers.get("Content-Length")).toBeNull();
-    expect(await response?.text()).toContain('<base href="https://gateway.example/ipfs/cid/">');
-  });
-
   it("ignores json responses from gateways", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response('{"error":"not found"}', {
@@ -100,19 +82,5 @@ describe("fetchFirstValidGatewayResponse", () => {
     await expect(
       fetchFirstValidGatewayResponse(["https://gateway.example/ipfs/cid"]),
     ).resolves.toBeNull();
-  });
-});
-
-describe("injectBaseHref", () => {
-  it("inserts the base tag after an existing head tag", () => {
-    expect(
-      injectBaseHref("<html><head><title>x</title></head></html>", "https://example.com/root"),
-    ).toBe('<html><head><base href="https://example.com/root/"><title>x</title></head></html>');
-  });
-
-  it("does not add another base tag when one already exists", () => {
-    expect(
-      injectBaseHref('<html><head><base href="https://example.com/"></head></html>', "x"),
-    ).toBe('<html><head><base href="https://example.com/"></head></html>');
   });
 });

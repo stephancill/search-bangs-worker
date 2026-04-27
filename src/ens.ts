@@ -127,7 +127,7 @@ export async function fetchFirstValidGatewayResponse(urls: string[]): Promise<Re
           throw new Error(`Invalid gateway response from ${url}`);
         }
 
-        return { index, response: withGatewayHeaders(response) };
+        return { index, response: await withGatewayHeaders(response, url) };
       }),
     );
 
@@ -152,16 +152,61 @@ function isValidGatewayResponse(response: Response): boolean {
   return !contentType.toLowerCase().includes("application/json");
 }
 
-function withGatewayHeaders(response: Response): Response {
+async function withGatewayHeaders(response: Response, gatewayUrl: string): Promise<Response> {
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", headers.get("Cache-Control") ?? "public, max-age=300");
-  headers.set("X-ENS-Contenthash-Gateway", response.url);
+  headers.set("X-ENS-Contenthash-Gateway", response.url || gatewayUrl);
+
+  if (isHtmlResponse(response)) {
+    headers.delete("Content-Length");
+
+    return new Response(injectBaseHref(await response.text(), response.url || gatewayUrl), {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
 
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
+}
+
+function isHtmlResponse(response: Response): boolean {
+  const contentType = response.headers.get("Content-Type") ?? "";
+  return contentType.toLowerCase().includes("text/html");
+}
+
+export function injectBaseHref(html: string, href: string): string {
+  const base = `<base href="${escapeHtmlAttribute(ensureTrailingSlash(href))}">`;
+
+  if (/<base\s/i.test(html)) {
+    return html;
+  }
+
+  const headMatch = html.match(/<head(?:\s[^>]*)?>/i);
+  if (headMatch?.index !== undefined) {
+    const insertAt = headMatch.index + headMatch[0].length;
+    return `${html.slice(0, insertAt)}${base}${html.slice(insertAt)}`;
+  }
+
+  const htmlMatch = html.match(/<html(?:\s[^>]*)?>/i);
+  if (htmlMatch?.index !== undefined) {
+    const insertAt = htmlMatch.index + htmlMatch[0].length;
+    return `${html.slice(0, insertAt)}<head>${base}</head>${html.slice(insertAt)}`;
+  }
+
+  return `${base}${html}`;
+}
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith("/") ? value : `${value}/`;
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
 }
 
 function readVarint(bytes: Uint8Array, offset: number): { value: number; bytesRead: number } {

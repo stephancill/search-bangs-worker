@@ -179,37 +179,26 @@ function isHtmlResponse(response: Response): boolean {
   return contentType.toLowerCase().includes("text/html");
 }
 
-export function injectBaseHref(html: string, href: string, rootHref = href): string {
+export function injectBaseHref(html: string, href: string): string {
   const base = `<base href="${escapeHtmlAttribute(ensureTrailingSlash(href))}">`;
-  const rewrittenHtml = rewriteRootRelativeUrls(html, rootHref);
 
-  if (/<base\s/i.test(rewrittenHtml)) {
-    return rewrittenHtml;
+  if (/<base\s/i.test(html)) {
+    return html;
   }
 
-  const headMatch = rewrittenHtml.match(/<head(?:\s[^>]*)?>/i);
+  const headMatch = html.match(/<head(?:\s[^>]*)?>/i);
   if (headMatch?.index !== undefined) {
     const insertAt = headMatch.index + headMatch[0].length;
-    return `${rewrittenHtml.slice(0, insertAt)}${base}${rewrittenHtml.slice(insertAt)}`;
+    return `${html.slice(0, insertAt)}${base}${html.slice(insertAt)}`;
   }
 
-  const htmlMatch = rewrittenHtml.match(/<html(?:\s[^>]*)?>/i);
+  const htmlMatch = html.match(/<html(?:\s[^>]*)?>/i);
   if (htmlMatch?.index !== undefined) {
     const insertAt = htmlMatch.index + htmlMatch[0].length;
-    return `${rewrittenHtml.slice(0, insertAt)}<head>${base}</head>${rewrittenHtml.slice(insertAt)}`;
+    return `${html.slice(0, insertAt)}<head>${base}</head>${html.slice(insertAt)}`;
   }
 
-  return `${base}${rewrittenHtml}`;
-}
-
-function rewriteRootRelativeUrls(html: string, rootHref: string): string {
-  const root = ensureTrailingSlash(rootHref);
-  return html.replace(
-    /\b(href|src|action)=(['"])\/(?!\/)([^'"]*)\2/gi,
-    (_match, attribute, quote, path) => {
-      return `${attribute}=${quote}${escapeHtmlAttribute(new URL(path, root).toString())}${quote}`;
-    },
-  );
+  return `${base}${html}`;
 }
 
 function ensureTrailingSlash(value: string): string {

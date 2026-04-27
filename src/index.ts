@@ -1,17 +1,24 @@
 import { getBangTemplateByToken } from "./bangs";
 import { QueryCounter } from "./counter";
+import { resolveEnsContenthashUrl } from "./ens";
 import { applyBangTemplate, googleLuckyUrl, googleSearchUrl, parseQuery } from "./routing";
 
 type Env = {
   ASSETS: Fetcher;
   QUERY_COUNTER: DurableObjectNamespace;
+  ETH_RPC_URL?: string;
 };
 
 function redirect(target: string): Response {
   return Response.redirect(target, 302);
 }
 
-async function routeQuery(rawQuery: string): Promise<Response> {
+async function routeQuery(rawQuery: string, env: Env): Promise<Response> {
+  const ensUrl = await resolveEnsContenthashUrl({ query: rawQuery, rpcUrl: env.ETH_RPC_URL });
+  if (ensUrl) {
+    return redirect(ensUrl);
+  }
+
   const parsed = parseQuery(rawQuery);
 
   if (parsed.kind === "lucky") {
@@ -69,7 +76,7 @@ export default {
 
     ctx.waitUntil(incrementQueryCount(env));
 
-    return routeQuery(query);
+    return routeQuery(query, env);
   },
 };
 

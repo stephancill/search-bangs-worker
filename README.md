@@ -8,7 +8,7 @@ Cloudflare Worker that acts like DuckDuckGo bangs, with Google as the default se
 - `?q=!w cloudflare` -> bang redirect (`!w` -> Wikipedia)
 - `?q=! cloudflare` -> Google first result (lucky)
 - `?q=cloudflare !` -> Google first result (lucky)
-- `?q=!notreal cloudflare` -> Google search for full query (keeps `!notreal`)
+- `?q=ens.eth` -> ENS contenthash resolution
 - `?q=!` -> `https://www.google.com/`
 
 ## Local development

@@ -2,6 +2,7 @@ import { getBangTemplateByToken } from "./bangs";
 import { QueryCounter } from "./counter";
 import { fetchFirstValidGatewayResponse, gatewayUrls, resolveEnsContenthashTarget } from "./ens";
 import { applyBangTemplate, googleLuckyUrl, googleSearchUrl, parseQuery } from "./routing";
+import { routeWeb3Path, routeWeb3Request } from "./web3url";
 
 type Env = {
   ASSETS: Fetcher;
@@ -14,7 +15,12 @@ function redirect(target: string): Response {
   return Response.redirect(target, 302);
 }
 
-async function routeQuery(rawQuery: string, env: Env): Promise<Response> {
+async function routeQuery(rawQuery: string, env: Env, origin: string): Promise<Response> {
+  const web3Response = await routeWeb3Request({ query: rawQuery, origin });
+  if (web3Response) {
+    return web3Response;
+  }
+
   const ensTarget = await resolveEnsContenthashTarget({ query: rawQuery, rpcUrl: env.ETH_RPC_URL });
   if (ensTarget) {
     const response = await fetchFirstValidGatewayResponse(
@@ -71,6 +77,11 @@ export default {
       return Response.json({ count });
     }
 
+    if (url.pathname.startsWith("/web3/")) {
+      const response = await routeWeb3Path(url);
+      return response ?? new Response("Not found", { status: 404 });
+    }
+
     if (url.pathname !== "/" && url.pathname !== "/search") {
       return env.ASSETS.fetch(request);
     }
@@ -83,7 +94,7 @@ export default {
 
     ctx.waitUntil(incrementQueryCount(env));
 
-    return routeQuery(query, env);
+    return routeQuery(query, env, url.origin);
   },
 };
 

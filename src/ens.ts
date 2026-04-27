@@ -16,6 +16,12 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ENS_NAME_PATTERN = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.eth$/;
 const IPFS_NAMESPACE = 0xe3;
 const IPNS_NAMESPACE = 0xe5;
+const PUBLIC_GATEWAY_HOSTS = [
+  "dweb.link",
+  "ipfs.io",
+  "cloudflare-ipfs.com",
+  "gateway.pinata.cloud",
+];
 
 const ensRegistryAbi = [
   {
@@ -61,7 +67,12 @@ export function normalizeEnsQuery(rawQuery: string): string | null {
   return query;
 }
 
-export function contenthashToGatewayUrl(hash: Hex): string | null {
+export type ContenthashTarget = {
+  namespace: "ipfs" | "ipns";
+  value: string;
+};
+
+export function contenthashToTarget(hash: Hex): ContenthashTarget | null {
   if (hash === "0x") {
     return null;
   }
@@ -76,10 +87,81 @@ export function contenthashToGatewayUrl(hash: Hex): string | null {
   const value = CID.decode(bytes.slice(bytesRead)).toString();
 
   if (namespace === IPFS_NAMESPACE) {
-    return `https://dweb.link/ipfs/${value}`;
+    return { namespace: "ipfs", value };
   }
 
-  return `https://dweb.link/ipns/${value}`;
+  return { namespace: "ipns", value };
+}
+
+export function contenthashToGatewayUrl(hash: Hex): string | null {
+  const target = contenthashToTarget(hash);
+  return target ? gatewayUrls({ target })[0] : null;
+}
+
+export function gatewayUrls({
+  pinataGatewayHost,
+  target,
+}: {
+  pinataGatewayHost?: string;
+  target: ContenthashTarget;
+}): string[] {
+  const hosts = pinataGatewayHost
+    ? [pinataGatewayHost.replace(/^https?:\/\//, "").replace(/\/$/, ""), ...PUBLIC_GATEWAY_HOSTS]
+    : PUBLIC_GATEWAY_HOSTS;
+
+  return hosts.map((host) => `https://${host}/${target.namespace}/${target.value}`);
+}
+
+export async function fetchFirstValidGatewayResponse(urls: string[]): Promise<Response | null> {
+  const controllers = urls.map(() => new AbortController());
+
+  try {
+    const { index, response } = await Promise.any(
+      urls.map(async (url, index) => {
+        const response = await fetch(url, {
+          headers: { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+          signal: controllers[index].signal,
+        });
+
+        if (!isValidGatewayResponse(response)) {
+          throw new Error(`Invalid gateway response from ${url}`);
+        }
+
+        return { index, response: withGatewayHeaders(response) };
+      }),
+    );
+
+    controllers.forEach((controller, controllerIndex) => {
+      if (controllerIndex !== index) {
+        controller.abort();
+      }
+    });
+
+    return response;
+  } catch {
+    return null;
+  }
+}
+
+function isValidGatewayResponse(response: Response): boolean {
+  if (!response.ok) {
+    return false;
+  }
+
+  const contentType = response.headers.get("Content-Type") ?? "";
+  return !contentType.toLowerCase().includes("application/json");
+}
+
+function withGatewayHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", headers.get("Cache-Control") ?? "public, max-age=300");
+  headers.set("X-ENS-Contenthash-Gateway", response.url);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 function readVarint(bytes: Uint8Array, offset: number): { value: number; bytesRead: number } {
@@ -134,6 +216,45 @@ export async function resolveEnsContenthashUrl({
     });
 
     return contenthashToGatewayUrl(hash);
+  } catch {
+    return null;
+  }
+}
+
+export async function resolveEnsContenthashTarget({
+  query,
+  rpcUrl,
+}: {
+  query: string;
+  rpcUrl?: string;
+}): Promise<ContenthashTarget | null> {
+  const name = normalizeEnsQuery(query);
+  if (!name) {
+    return null;
+  }
+
+  try {
+    const client = clientForRpcUrl(rpcUrl);
+    const node = namehash(name);
+    const resolver = await client.readContract({
+      address: ENS_REGISTRY_ADDRESS,
+      abi: ensRegistryAbi,
+      functionName: "resolver",
+      args: [node],
+    });
+
+    if (resolver.toLowerCase() === ZERO_ADDRESS) {
+      return null;
+    }
+
+    const hash = await client.readContract({
+      address: resolver as Address,
+      abi: ensResolverAbi,
+      functionName: "contenthash",
+      args: [node],
+    });
+
+    return contenthashToTarget(hash);
   } catch {
     return null;
   }

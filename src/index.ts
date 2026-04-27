@@ -1,13 +1,12 @@
 import { getBangTemplateByToken } from "./bangs";
 import { QueryCounter } from "./counter";
-import { fetchFirstValidGatewayResponse, gatewayUrls, resolveEnsContenthashTarget } from "./ens";
+import { resolveEnsContenthashUrl } from "./ens";
 import { applyBangTemplate, googleLuckyUrl, googleSearchUrl, parseQuery } from "./routing";
 
 type Env = {
   ASSETS: Fetcher;
   QUERY_COUNTER: DurableObjectNamespace;
   ETH_RPC_URL?: string;
-  PINATA_GATEWAY_HOST?: string;
 };
 
 function redirect(target: string): Response {
@@ -15,15 +14,9 @@ function redirect(target: string): Response {
 }
 
 async function routeQuery(rawQuery: string, env: Env): Promise<Response> {
-  const ensTarget = await resolveEnsContenthashTarget({ query: rawQuery, rpcUrl: env.ETH_RPC_URL });
-  if (ensTarget) {
-    const response = await fetchFirstValidGatewayResponse(
-      gatewayUrls({ target: ensTarget, pinataGatewayHost: env.PINATA_GATEWAY_HOST }),
-    );
-
-    if (response) {
-      return response;
-    }
+  const ensUrl = await resolveEnsContenthashUrl({ query: rawQuery, rpcUrl: env.ETH_RPC_URL });
+  if (ensUrl) {
+    return redirect(ensUrl);
   }
 
   const parsed = parseQuery(rawQuery);

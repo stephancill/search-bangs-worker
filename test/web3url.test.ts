@@ -21,6 +21,19 @@ describe("parseWeb3Request", () => {
       resource: ["asset", "1"],
     });
   });
+
+  it("parses bare Ethereum addresses as mainnet web3 requests", () => {
+    expect(parseWeb3Request("0x000000000a4a4f895734cf70700b6f84aadbca6c")).toMatchObject({
+      address: "0x000000000A4A4F895734cF70700b6F84AadbcA6C",
+      baseUrl: "https://search.stupidtech.net/web3/1/0x000000000A4A4F895734cF70700b6F84AadbcA6C/",
+      chainId: 1,
+      resource: [],
+    });
+  });
+
+  it("ignores search queries containing Ethereum addresses", () => {
+    expect(parseWeb3Request("open 0x000000000a4a4f895734cf70700b6f84aadbca6c")).toBeNull();
+  });
 });
 
 describe("parseWeb3Route", () => {

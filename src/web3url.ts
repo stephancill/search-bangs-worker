@@ -44,6 +44,16 @@ const requestAbi = [
   },
 ] as const;
 
+const htmlAbi = [
+  {
+    inputs: [],
+    name: "html",
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+
 type Web3Request = {
   address: Address;
   baseUrl: string;
@@ -59,6 +69,16 @@ export function parseWeb3Request(
 ): Web3Request | null {
   const query = rawQuery.trim();
 
+  if (isAddress(query)) {
+    return web3RequestFromParts({
+      address: getAddress(query),
+      chainId: DEFAULT_CHAIN_ID,
+      origin,
+      params: [],
+      pathname: "/",
+    });
+  }
+
   if (!/^(?:web3|w3|eth-web3|ethereum-web3):\/\//i.test(query)) {
     return null;
   }
@@ -69,24 +89,13 @@ export function parseWeb3Request(
     return null;
   }
 
-  return {
+  return web3RequestFromParts({
     address: getAddress(contractName),
-    baseUrl: web3RouteUrl({
-      address: getAddress(contractName),
-      chainId: parseChainId(chainIdText),
-      origin,
-      pathname: url.pathname,
-    }),
     chainId: parseChainId(chainIdText),
+    origin,
     params: [...url.searchParams.entries()].map(([key, value]) => ({ key, value })),
-    resource: pathResource(url.pathname),
-    rootUrl: web3RouteUrl({
-      address: getAddress(contractName),
-      chainId: parseChainId(chainIdText),
-      origin,
-      pathname: "/",
-    }),
-  };
+    pathname: url.pathname,
+  });
 }
 
 export function parseWeb3Route(url: URL): Web3Request | null {
@@ -101,26 +110,13 @@ export function parseWeb3Route(url: URL): Web3Request | null {
     return null;
   }
 
-  const resource = parts.slice(3).map((part) => decodeURIComponent(part));
-
-  return {
+  return web3RequestFromParts({
     address: getAddress(address),
-    baseUrl: web3RouteUrl({
-      address: getAddress(address),
-      chainId,
-      origin: url.origin,
-      pathname: `/${resource.join("/")}`,
-    }),
     chainId,
+    origin: url.origin,
     params: [...url.searchParams.entries()].map(([key, value]) => ({ key, value })),
-    resource,
-    rootUrl: web3RouteUrl({
-      address: getAddress(address),
-      chainId,
-      origin: url.origin,
-      pathname: "/",
-    }),
-  };
+    pathname: `/${parts.slice(3).join("/")}`,
+  });
 }
 
 export async function routeWeb3Request({
@@ -152,6 +148,13 @@ async function executeWeb3Request(request: Web3Request): Promise<Response | null
     transport: http(STUPID_EVM_RPC_TEMPLATE.replace(":chainId", String(request.chainId))),
   });
 
+  if (request.resource.length === 0) {
+    const htmlResponse = await callHtml({ client, request });
+    if (htmlResponse) {
+      return htmlResponse;
+    }
+  }
+
   const data = encodeFunctionData({
     abi: requestAbi,
     functionName: "request",
@@ -161,13 +164,38 @@ async function executeWeb3Request(request: Web3Request): Promise<Response | null
   try {
     const result = await client.call({ data, to: request.address });
     if (!result.data) {
-      return null;
+      return request.resource.length === 0 ? callHtml({ client, request }) : null;
     }
 
     return responseFromResourceRequest({
       baseUrl: request.baseUrl,
       data: result.data,
       rootUrl: request.rootUrl,
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function callHtml({
+  client,
+  request,
+}: {
+  client: ReturnType<typeof createPublicClient>;
+  request: Web3Request;
+}): Promise<Response | null> {
+  try {
+    const html = await client.readContract({
+      address: request.address,
+      abi: htmlAbi,
+      functionName: "html",
+    });
+
+    return new Response(injectBaseHref(html, request.baseUrl, request.rootUrl), {
+      headers: {
+        "Cache-Control": "public, max-age=300",
+        "Content-Type": "text/html; charset=utf-8",
+      },
     });
   } catch {
     return null;
@@ -218,6 +246,29 @@ function parseChainId(chainIdText: string | undefined): number {
 
 function isHtmlContentType(contentType: string | null): boolean {
   return (contentType ?? "").toLowerCase().includes("text/html");
+}
+
+function web3RequestFromParts({
+  address,
+  chainId,
+  origin,
+  params,
+  pathname,
+}: {
+  address: Address;
+  chainId: number;
+  origin: string;
+  params: { key: string; value: string }[];
+  pathname: string;
+}): Web3Request {
+  return {
+    address,
+    baseUrl: web3RouteUrl({ address, chainId, origin, pathname }),
+    chainId,
+    params,
+    resource: pathResource(pathname),
+    rootUrl: web3RouteUrl({ address, chainId, origin, pathname: "/" }),
+  };
 }
 
 function web3RouteUrl({

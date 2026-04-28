@@ -61,7 +61,7 @@ export function normalizeEnsQuery(rawQuery: string): string | null {
   return query;
 }
 
-export function contenthashToGatewayUrl(hash: Hex): string | null {
+export function contenthashToGatewayUrl(hash: Hex, name?: string): string | null {
   if (hash === "0x") {
     return null;
   }
@@ -74,12 +74,13 @@ export function contenthashToGatewayUrl(hash: Hex): string | null {
   }
 
   const value = CID.decode(bytes.slice(bytesRead)).toString();
+  const sref = name ? `?_sref=${encodeURIComponent(name)}` : "";
 
   if (namespace === IPFS_NAMESPACE) {
-    return `https://ipfs.stupidtech.net/ipfs/${value}/`;
+    return `https://ipfs.stupidtech.net/ipfs/${value}/${sref}`;
   }
 
-  return `https://ipfs.stupidtech.net/ipns/${value}/`;
+  return `https://ipfs.stupidtech.net/ipns/${value}/${sref}`;
 }
 
 function readVarint(bytes: Uint8Array, offset: number): { value: number; bytesRead: number } {
@@ -133,7 +134,7 @@ export async function resolveEnsContenthashUrl({
       args: [node],
     });
 
-    return contenthashToGatewayUrl(hash);
+    return contenthashToGatewayUrl(hash, name);
   } catch {
     return null;
   }

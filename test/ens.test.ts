@@ -16,7 +16,7 @@ describe("contenthashToGatewayUrl", () => {
     const hash = "0xe301017012209d6c2be50f70695347c6da90ab413d0fba6aa026a4ea59a1588934c168a82316";
 
     expect(contenthashToGatewayUrl(hash)).toBe(
-      "https://ipfs.stupidtech.net/ipfs/bafybeie5nqv6kd3qnfjuprw2scvucpipxjvkajve5jm2cwejgtawrkbdcy/",
+      "https://bafybeie5nqv6kd3qnfjuprw2scvucpipxjvkajve5jm2cwejgtawrkbdcy.ipfs.stupidtech.net/",
     );
   });
 });

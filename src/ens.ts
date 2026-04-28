@@ -77,7 +77,7 @@ export function contenthashToGatewayUrl(hash: Hex, name?: string): string | null
   const sref = name ? `?_sref=${encodeURIComponent(name)}` : "";
 
   if (namespace === IPFS_NAMESPACE) {
-    return `https://ipfs.stupidtech.net/ipfs/${value}/${sref}`;
+    return `https://${value}.ipfs.stupidtech.net/${sref}`;
   }
 
   return `https://ipfs.stupidtech.net/ipns/${value}/${sref}`;
